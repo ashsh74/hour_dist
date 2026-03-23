@@ -1,0 +1,140 @@
+{% extends base_template %}
+{% load crispy_forms_tags %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">{{ title }}</h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    {% if form.non_field_errors %}
+                    <div class="alert alert-danger">
+                        {% for error in form.non_field_errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            {{ form.name|as_crispy_field }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.code|as_crispy_field }}
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            {{ form.bachelor_program|as_crispy_field }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.course|as_crispy_field }}
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            {{ form.academic_year|as_crispy_field }}                            
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.semester|as_crispy_field }}
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.student_groups|as_crispy_field }}
+                        <small class="form-text text-muted">
+                            Выберите группы студентов, которые будут объединены в поток. 
+                            Группы должны быть одного курса и направления.
+                        </small>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i>
+                        <strong>Информация:</strong> При сохранении автоматически будет рассчитано 
+                        общее количество студентов на основе выбранных групп.
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{% url 'hours_distribution:stream_groups_list' %}" class="btn btn-secondary me-md-2">
+                            <i class="fas fa-times"></i> Отмена
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Сохранить
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const yearSelect = document.getElementById('id_academic_year');
+    const semesterSelect = document.getElementById('id_semester');
+
+    if (!yearSelect || !semesterSelect) return;
+
+    yearSelect.addEventListener('change', async function () {
+        const yearId = this.value;
+
+        // Очистка списка семестров
+        semesterSelect.innerHTML = '<option value="">Загрузка...</option>';
+        semesterSelect.disabled = true;
+
+        if (!yearId) {
+            semesterSelect.innerHTML = '<option value="">---------</option>';
+            semesterSelect.disabled = false;
+            return;
+        }
+
+        try {
+            const response = await fetch({% url 'hours_distribution:api_semesters' %}?academic_year=" + yearId, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error('Ошибка загрузки семестров');
+            }
+
+            const data = await response.json();
+
+            semesterSelect.innerHTML = '<option value="">---------</option>';
+
+            if (data.length === 0) {
+                semesterSelect.innerHTML =
+                    '<option value="">Нет доступных семестров</option>';
+            } else {
+                data.forEach(semester => {
+                    const option = document.createElement('option');
+                    option.value = semester.id;
+                    option.textContent =
+                        `Семестр ${semester.number} (${semester.start_date} - ${semester.end_date})`;
+                    semesterSelect.appendChild(option);
+                });
+            }
+
+        } catch (error) {
+            console.error(error);
+            semesterSelect.innerHTML =
+                '<option value="">Ошибка загрузки</option>';
+        } finally {
+            semesterSelect.disabled = false;
+        }
+    });
+});
+</script>
+{% endblock %}

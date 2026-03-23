@@ -1,0 +1,241 @@
+{% extends base_template %}
+{% load crispy_forms_tags %}
+
+{% block title %}Распределение нагрузки{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Распределение учебной нагрузки</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" id="workloadForm">
+                    {% csrf_token %}
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            {{ form.curriculum_subject|as_crispy_field }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.teacher|as_crispy_field }}
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-12">
+                            <label class="form-label">Тип распределения *</label>
+                            <div class="btn-group w-100" role="group">
+                                <input type="radio" class="btn-check" name="group_type" id="group_type_single" 
+                                    value="single" {% if form.group_type.value == 'single' %}checked{% endif %}>
+                                <label class="btn btn-outline-primary" for="group_type_single">
+                                    <i class="fas fa-user-friends"></i> Отдельная группа
+                                </label>
+                                
+                                <input type="radio" class="btn-check" name="group_type" id="group_type_stream" 
+                                    value="stream" {% if form.group_type.value == 'stream' %}checked{% endif %}>
+                                <label class="btn btn-outline-success" for="group_type_stream">
+                                    <i class="fas fa-users"></i> Поточная группа
+                                </label>
+                            </div>
+                            {% if form.group_type.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.group_type.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-6" id="single-group-field" style="display: none;">
+                            {{ form.student_group|as_crispy_field }}
+                        </div>
+                        <div class="col-md-6" id="stream-group-field" style="display: none;">
+                            {{ form.stream_group|as_crispy_field }}
+                        </div>
+                    </div>
+                    
+                    <div class="card mb-4">
+                        <div class="card-header bg-info text-white">
+                            <h6 class="mb-0">Распределение часов</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    {{ form.hours_lecture|as_crispy_field }}
+                                </div>
+                                <div class="col-md-4">
+                                    {{ form.hours_practice|as_crispy_field }}
+                                </div>
+                                <div class="col-md-4">
+                                    {{ form.hours_lab|as_crispy_field }}
+                                </div>
+                            </div>
+                            <div class="row mt-2">
+                                <div class="col-md-12">
+                                    <div class="alert alert-light">
+                                        <div class="d-flex justify-content-between">
+                                            <span>Всего часов:</span>
+                                            <strong id="total-hours">0</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <strong>Внимание:</strong> При распределении нагрузки на поточную группу, 
+                        часы будут учитываться один раз для всего потока, а не для каждой группы отдельно.
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{% url 'hours_distribution:workload_distribution_list' %}" class="btn btn-secondary me-md-2">
+                            <i class="fas fa-times"></i> Отмена
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-check"></i> Распределить нагрузку
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <div class="card mt-4">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">Информация о распределении</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Нормы нагрузки:</h6>
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-check text-success"></i> Стандартная нагрузка: 18 ч/неделю</li>
+                            <li><i class="fas fa-check text-success"></i> Годовая нагрузка: 648 часов</li>
+                            <li><i class="fas fa-check text-success"></i> Минимальная нагрузка: 540 часов</li>
+                            <li><i class="fas fa-check text-success"></i> Максимальная нагрузка: 900 часов</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Рекомендации:</h6>
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-info-circle text-info"></i> Лекции: 1 ак. час = 1.5 астрономического часа</li>
+                            <li><i class="fas fa-info-circle text-info"></i> Практики: 1 ак. час = 1 астрономический час</li>
+                            <li><i class="fas fa-info-circle text-info"></i> Лабораторные: 1 ак. час = 1.5 астрономического часа</li>
+                            <li><i class="fas fa-info-circle text-info"></i> Для потоков учитывайте общее количество студентов</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Показать/скрыть поля в зависимости от типа группы
+    const groupTypeSingle = document.getElementById('group_type_single');
+    const groupTypeStream = document.getElementById('group_type_stream');
+    const singleGroupField = document.getElementById('single-group-field');
+    const streamGroupField = document.getElementById('stream-group-field');
+    
+    function updateGroupFields() {
+        if (groupTypeSingle.checked) {
+            singleGroupField.style.display = 'block';
+            streamGroupField.style.display = 'none';
+            // Обязательные поля
+            document.getElementById('id_student_group').required = true;
+            document.getElementById('id_stream_group').required = false;
+        } else if (groupTypeStream.checked) {
+            singleGroupField.style.display = 'none';
+            streamGroupField.style.display = 'block';
+            // Обязательные поля
+            document.getElementById('id_student_group').required = false;
+            document.getElementById('id_stream_group').required = true;
+        }
+    }
+    
+    // Инициализация при загрузке
+    updateGroupFields();
+    
+    // Обработчики изменений
+    groupTypeSingle.addEventListener('change', updateGroupFields);
+    groupTypeStream.addEventListener('change', updateGroupFields);
+    
+    // Расчет общего количества часов
+    const hoursLecture = document.getElementById('id_hours_lecture');
+    const hoursPractice = document.getElementById('id_hours_practice');
+    const hoursLab = document.getElementById('id_hours_lab');
+    const totalHoursElement = document.getElementById('total-hours');
+    
+    function calculateTotalHours() {
+        const lecture = parseInt(hoursLecture.value) || 0;
+        const practice = parseInt(hoursPractice.value) || 0;
+        const lab = parseInt(hoursLab.value) || 0;
+        const total = lecture + practice + lab;
+        totalHoursElement.textContent = total;
+        
+        // Подсветка в зависимости от нормы
+        if (total > 900) {
+            totalHoursElement.parentElement.classList.remove('alert-light', 'alert-success', 'alert-warning');
+            totalHoursElement.parentElement.classList.add('alert-danger');
+        } else if (total < 540) {
+            totalHoursElement.parentElement.classList.remove('alert-light', 'alert-success', 'alert-danger');
+            totalHoursElement.parentElement.classList.add('alert-warning');
+        } else {
+            totalHoursElement.parentElement.classList.remove('alert-light', 'alert-warning', 'alert-danger');
+            totalHoursElement.parentElement.classList.add('alert-success');
+        }
+    }
+    
+    // Обработчики для полей часов
+    [hoursLecture, hoursPractice, hoursLab].forEach(field => {
+        field.addEventListener('input', calculateTotalHours);
+        field.addEventListener('change', calculateTotalHours);
+    });
+    
+    // Инициализация расчета
+    calculateTotalHours();
+    
+    // Динамическая загрузка групп при выборе дисциплины
+    const curriculumSubjectSelect = document.getElementById('id_curriculum_subject');
+    const studentGroupSelect = document.getElementById('id_student_group');
+    const streamGroupSelect = document.getElementById('id_stream_group');
+    
+    if (curriculumSubjectSelect) {
+        curriculumSubjectSelect.addEventListener('change', function() {
+            const curriculumSubjectId = this.value;
+            if (curriculumSubjectId) {
+                // Загрузка доступных групп
+                fetch(`/api/curriculum-subject-groups/?curriculum_subject=${curriculumSubjectId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        // Обновление списка обычных групп
+                        studentGroupSelect.innerHTML = '<option value="">---------</option>';
+                        data.groups.forEach(group => {
+                            const option = document.createElement('option');
+                            option.value = group.id;
+                            option.textContent = `${group.code} - ${group.name}`;
+                            studentGroupSelect.appendChild(option);
+                        });
+                        
+                        // Обновление списка потоковых групп
+                        streamGroupSelect.innerHTML = '<option value="">---------</option>';
+                        data.streams.forEach(stream => {
+                            const option = document.createElement('option');
+                            option.value = stream.id;
+                            option.textContent = `${stream.name} (${stream.total_students} студентов)`;
+                            streamGroupSelect.appendChild(option);
+                        });
+                    })
+                    .catch(error => console.error('Error:', error));
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

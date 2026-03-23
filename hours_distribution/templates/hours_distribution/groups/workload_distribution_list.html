@@ -1,0 +1,356 @@
+{% extends base_template %}
+
+{% block title %}Распределения нагрузки{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h2>Распределения учебной нагрузки</h2>
+        <p class="lead">Учет распределенных часов по группам и потокам</p>
+    </div>
+    <div class="col-md-4 text-end">
+        <a href="{% url 'hours_distribution:distribute_workload' %}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Новое распределение
+        </a>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-white bg-primary">
+            <div class="card-body text-center">
+                <h5 class="card-title">Всего распределений</h5>
+                <p class="card-text display-6">{{ distributions|length }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-success">
+            <div class="card-body text-center">
+                <h5 class="card-title">Всего часов</h5>
+                <p class="card-text display-6">{{ total_hours }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-info">
+            <div class="card-body text-center">
+                <h5 class="card-title">Обычных групп</h5>
+                <p class="card-text display-6">{{ single_groups }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-warning">
+            <div class="card-body text-center">
+                <h5 class="card-title">Потоковых групп</h5>
+                <p class="card-text display-6">{{ stream_groups }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">Фильтры</h5>
+            </div>
+            <div class="card-body">
+                <form method="get" class="row g-3">
+                    <div class="col-md-4">
+                        <label for="subject" class="form-label">Дисциплина:</label>
+                        <select name="subject" id="subject" class="form-select">
+                            <option value="">Все дисциплины</option>
+                            {% for subject in subjects %}
+                            <option value="{{ subject.id }}" {% if request.GET.subject == subject.id|stringformat:"i" %}selected{% endif %}>
+                                {{ subject.code }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="group_type" class="form-label">Тип группы:</label>
+                        <select name="group_type" id="group_type" class="form-select">
+                            <option value="">Все типы</option>
+                            <option value="single" {% if request.GET.group_type == 'single' %}selected{% endif %}>Обычные группы</option>
+                            <option value="stream" {% if request.GET.group_type == 'stream' %}selected{% endif %}>Потоковые группы</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="curriculum" class="form-label">Учебный план:</label>
+                        <select name="curriculum" id="curriculum" class="form-select">
+                            <option value="">Все планы</option>
+                            {% for curriculum in curricula %}
+                            <option value="{{ curriculum.id }}" {% if request.GET.curriculum == curriculum.id|stringformat:"i" %}selected{% endif %}>
+                                {{ curriculum.bachelor_program.code }} ({{ curriculum.year_of_admission }})
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-12 text-end">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-filter"></i> Применить
+                        </button>
+                        <a href="{% url 'hours_distribution:workload_distribution_list' %}" class="btn btn-secondary">
+                            <i class="fas fa-times"></i> Сбросить
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="row">
+    <div class="col">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0 text-white">Список распределений</h5>
+            </div>
+            <div class="card-body">
+                {% if distributions %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Дисциплина</th>
+                                <th>Учебный план</th>
+                                <th>Курс</th>
+                                <th>Группа/Поток</th>
+                                <th>Тип</th>
+                                <th>Лекции</th>
+                                <th>Практики</th>
+                                <th>Лаб.</th>
+                                <th>Всего часов</th>
+                                <th>Действия</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for distribution in distributions %}
+                            <tr class="{% cycle 'table-light' '' %} {% if forloop.counter > 0 %}table-info{% endif %}">
+                                <td>
+                                    <strong>{{ distribution.curriculum_subject.subject.code }}</strong><br>
+                                    <small class="text-muted">{{ distribution.curriculum_subject.subject.name }}</small>
+                                </td>
+                                <td>
+                                    {{ distribution.curriculum_subject.curriculum.bachelor_program.code }}<br>
+                                    <small class="text-muted">{{distribution.curriculum_subject.curriculum.bachelor_program.name}} ({{ distribution.curriculum_subject.curriculum.year_of_admission }})</small>
+                                </td>
+                                <td>{{ distribution.curriculum_subject.course.number }} курс</td>
+                                <td>
+                                    {% if distribution.student_group %}
+                                        <strong>{{ distribution.student_group.code }}</strong><br>
+                                        <small class="text-muted">{{ distribution.student_group.name }}</small>
+                                    {% else %}
+                                        <strong>Поток: {{ distribution.stream_group.name }}</strong><br>
+                                        <small class="text-muted">
+                                            {{ distribution.stream_group.student_groups.count }} групп
+                                        </small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if distribution.student_group %}
+                                        <span class="badge bg-secondary">Обычная</span>
+                                    {% else %}
+                                        <span class="badge bg-info">Потоковая</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ distribution.hours_lecture }}</td>
+                                <td>{{ distribution.hours_practice }}</td>
+                                <td>{{ distribution.hours_lab }}</td>
+                                <td>
+                                    <span class="badge bg-primary">{{ distribution.total_hours }}</span>
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <button type="button" class="btn btn-outline-info" 
+                                                data-bs-toggle="modal" 
+                                                data-bs-target="#detailsModal{{ distribution.id }}">
+                                            <i class="fas fa-info-circle"></i>
+                                        </button>
+                                        <a href="{% url 'admin:hours_distribution_curriculumsubjectgroup_change' distribution.id %}" 
+                                           class="btn btn-outline-secondary">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-chart-pie fa-4x text-muted mb-3"></i>
+                    <h4>Распределения не найдены</h4>
+                    <p class="text-muted">Создайте первое распределение учебной нагрузки</p>
+                    <a href="{% url 'hours_distribution:distribute_workload' %}" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Создать распределение
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modals Container (placed outside tables for proper rendering) -->
+{% for distribution in distributions %}
+<!-- Modal for details -->
+<div class="modal fade" id="detailsModal{{ distribution.id }}" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary">
+                <h5 class="text-white modal-title">Детали распределения</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <dl class="row">
+                    <dt class="col-sm-4">Дисциплина:</dt>
+                    <dd class="col-sm-8">
+                        {{ distribution.curriculum_subject.subject.code }} - 
+                        {{ distribution.curriculum_subject.subject.name }}
+                    </dd>
+                    
+                    <dt class="col-sm-4">Учебный план:</dt>
+                    <dd class="col-sm-8">
+                        {{ distribution.curriculum_subject.curriculum.bachelor_program.code }} - 
+                        {{ distribution.curriculum_subject.curriculum.bachelor_program.name }}
+                        ({{ distribution.curriculum_subject.curriculum.year_of_admission }} г.н.)
+                    </dd>
+                    
+                    <dt class="col-sm-4">Курс/Семестр:</dt>
+                    <dd class="col-sm-8">
+                        {{ distribution.curriculum_subject.course.number }} курс, 
+                        {{ distribution.curriculum_subject.semester.number }} семестр
+                    </dd>
+                    
+                    <dt class="col-sm-4">Тип группы:</dt>
+                    <dd class="col-sm-8">
+                        {% if distribution.student_group %}
+                            <span class="badge bg-secondary">Обычная группа</span>
+                        {% else %}
+                            <span class="badge bg-info">Поточная группа</span>
+                        {% endif %}
+                    </dd>
+                    
+                    <dt class="col-sm-4">Группа/Поток:</dt>
+                    <dd class="col-sm-8">
+                        {% if distribution.student_group %}
+                            {{ distribution.student_group.get_full_name }}<br>
+                            <small class="text-muted">
+                                Студентов: {{ distribution.student_group.students_count }}
+                            </small>
+                        {% else %}
+                            {{ distribution.stream_group.name }}<br>
+                            <small class="text-muted">
+                                Групп: {{ distribution.stream_group.student_groups.count }}, 
+                                Студентов: {{ distribution.stream_group.total_students }}
+                            </small>
+                        {% endif %}
+                    </dd>
+                    
+                    <dt class="col-sm-4">Распределение часов:</dt>
+                    <dd class="col-sm-8">
+                        <div class="progress" style="height: 25px;">
+                            <div class="progress-bar bg-primary" style="width: {% widthratio distribution.hours_lecture distribution.total_hours 100 %}%">
+                                Лекции: {{ distribution.hours_lecture }}ч
+                            </div>
+                            <div class="progress-bar bg-success" style="width: {% widthratio distribution.hours_practice distribution.total_hours 100 %}%">
+                                Практики: {{ distribution.hours_practice }}ч
+                            </div>
+                            <div class="progress-bar bg-warning" style="width: {% widthratio distribution.hours_lab distribution.total_hours 100 %}%">
+                                Лаб.: {{ distribution.hours_lab }}ч
+                            </div>
+                        </div>
+                        <div class="mt-2 text-center">
+                            <strong>Всего: {{ distribution.total_hours }} часов</strong>
+                        </div>
+                    </dd>
+                    
+                    <dt class="col-sm-4">Кафедра:</dt>
+                    <dd class="col-sm-8">{{ distribution.curriculum_subject.department.name }}</dd>
+                </dl>
+                
+                {% if not distribution.student_group %}
+                <h6>Группы в потоке:</h6>
+                <div class="list-group">
+                    {% for group in distribution.stream_group.student_groups.all %}
+                    <a href="{% url 'hours_distribution:student_group_detail' group.id %}" 
+                       class="list-group-item list-group-item-action">
+                        {{ group.code }} - {{ group.name }}
+                        <span class="badge bg-success float-end">{{ group.students_count }}</span>
+                    </a>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+                <a href="{% url 'admin:hours_distribution_curriculumsubjectgroup_change' distribution.id %}" 
+                   class="btn btn-primary">
+                    <i class="fas fa-edit"></i> Редактировать
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Prevent layout shift when modal opens by reserving space for scrollbar */
+    html {
+        overflow-y: scroll;
+    }
+    
+    /* Smooth modal animation */
+    .modal.fade {
+        transition: opacity 0.15s linear;
+    }
+    
+    .modal.show {
+        opacity: 1;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Активация модальных окон
+document.addEventListener('DOMContentLoaded', function() {
+    // Автоматическое закрытие модальных окон при нажатии на кнопку редактирования
+    const editButtons = document.querySelectorAll('a[href*="change"]');
+    editButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const row = this.closest('tr');
+            if (!row) return;
+            
+            const targetButton = row.querySelector('button[data-bs-target]');
+            if (!targetButton) return;
+            
+            const modalId = targetButton?.dataset.bsTarget;
+            if (!modalId) return;
+            
+            const modalElement = document.querySelector(modalId);
+            if (!modalElement) {
+                console.warn('Modal element not found:', modalId);
+                return;
+            }
+            
+            try {
+                const modal = bootstrap.Modal.getInstance(modalElement);
+                if (modal) {
+                    modal.hide();
+                }
+            } catch (e) {
+                console.error('Error hiding modal:', e);
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

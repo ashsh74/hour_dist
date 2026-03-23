@@ -1,0 +1,23 @@
+{% extends base_template %}
+{% load crispy_forms_tags %}
+{% block title %}{% if form.instance.pk %}Редактирование пользователя{% else %}Новый пользователь{% endif %}{% endblock %}
+{% block page_title %}{% if form.instance.pk %}Редактирование пользователя{% else %}Новый пользователь{% endif %}{% endblock %}
+{% block breadcrumb %}{% if form.instance.pk %}Редактирование пользователя{% else %}Новый пользователь{% endif %}{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header bg-primary">
+        <h4 class="text-white"> Форма {% if form.instance.pk %}редактирование{% else %}создания{% endif %} пользователя </h4>
+    </div>
+    <div class="card-body">
+        <form method="post" novalidate>
+            {% csrf_token %}
+            {{ form|crispy }}
+            <button type="submit" class="btn btn-primary">
+                {% if form.instance.pk %}Сохранить{% else %}Создать{% endif %}
+            </button>
+            <a href="{% url 'hours_distribution:user_list' %}" class="btn btn-secondary">Отмена</a>
+        </form>
+    </div>
+</div>
+{% endblock %}

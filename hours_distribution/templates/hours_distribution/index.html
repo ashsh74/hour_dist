@@ -1,0 +1,373 @@
+{% extends base_template %}
+
+{% block title %}Dashboard - Главная страница{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+{% block breadcrumb %}Главная{% endblock %}
+
+{% block extra_css %}
+<style>
+    .info-box {
+        margin-bottom: 2rem;
+        border-radius: 0.5rem;
+        overflow: hidden;
+    }
+    
+    .info-box-content {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding: 1.5rem;
+    }
+    
+    .info-box-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2.5rem;
+        width: 100px;
+        background: linear-gradient(135deg, rgba(0,0,0,.1), rgba(0,0,0,.05));
+    }
+    
+    .info-box-number {
+        font-size: 2rem;
+        font-weight: 700;
+        line-height: 1;
+    }
+    
+    .info-box-text {
+        font-size: 0.9rem;
+        margin-top: 0.5rem;
+        opacity: 0.8;
+    }
+    
+    .small-box {
+        border-radius: 0.5rem;
+        position: relative;
+        display: flex;
+        margin-bottom: 2rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+        overflow: hidden;
+    }
+    
+    .small-box > .inner {
+        padding: 1.5rem;
+        background: #fff;
+        flex: 1;
+    }
+    
+    .small-box > .small-box-footer {
+        background: rgba(0, 0, 0, 0.05);
+        padding: 0.5rem 1rem;
+        text-align: center;
+        color: inherit;
+        position: relative;
+        font-size: 0.85rem;
+    }
+    
+    .small-box-icon {
+        position: absolute;
+        font-size: 3rem;
+        right: 1rem;
+        top: -0.5rem;
+        color: rgba(255, 255, 255, 0.15);
+        z-index: 0;
+    }
+    
+    .small-box-number {
+        font-size: 2.2rem;
+        font-weight: 700;
+        position: relative;
+        z-index: 2;
+        color: var(--text-color);
+    }
+    
+    .small-box-text {
+        font-size: 0.95rem;
+        color: rgba(0,0,0,0.6);
+        margin-top: 0.3rem;
+    }
+    
+    .card-outline {
+        border-top: 3px solid;
+    }
+    
+    .card-outline-primary {
+        border-top-color: #667eea;
+    }
+    
+    .card-outline-success {
+        border-top-color: #28a745;
+    }
+    
+    .card-outline-info {
+        border-top-color: #17a2b8;
+    }
+    
+    .card-outline-warning {
+        border-top-color: #ffc107;
+    }
+    
+    .quick-access-btn {
+        margin-bottom: 0.5rem;
+        border-radius: 0.3rem;
+        transition: all 0.3s ease;
+    }
+    
+    .quick-access-btn:hover {
+        transform: translateX(5px);
+    }
+    
+    .list-item {
+        padding: 1rem;
+        border-left: 4px solid transparent;
+        transition: all 0.3s ease;
+    }
+    
+    .list-item:hover {
+        background-color: #f8f9fa;
+        border-left-color: #667eea;
+    }
+    
+    .stat-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2.5rem;
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        margin-right: 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Info boxes -->
+<div class="row">
+    <!-- Departments -->
+    <div class="col-md-3 col-sm-6 col-12">
+        <div class="info-box bg-light-primary">
+            <div class="info-box-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                <i class="fas fa-building"></i>
+            </div>
+            <div class="info-box-content">
+                <span class="info-box-text">Кафедры</span>
+                <span class="info-box-number">{{ departments_count }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Teachers -->
+    <div class="col-md-3 col-sm-6 col-12">
+        <div class="info-box bg-light-success">
+            <div class="info-box-icon" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white;">
+                <i class="fas fa-chalkboard-teacher"></i>
+            </div>
+            <div class="info-box-content">
+                <span class="info-box-text">Преподаватели</span>
+                <span class="info-box-number">{{ teachers_count }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Subjects -->
+    <div class="col-md-3 col-sm-6 col-12">
+        <div class="info-box bg-light-warning">
+            <div class="info-box-icon" style="background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%); color: white;">
+                <i class="fas fa-book"></i>
+            </div>
+            <div class="info-box-content">
+                <span class="info-box-text">Дисциплины</span>
+                <span class="info-box-number">{{ subjects_count }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Total Hours -->
+    <div class="col-md-3 col-sm-6 col-12">
+        <div class="info-box bg-light-info">
+            <div class="info-box-icon" style="background: linear-gradient(135deg, #17a2b8 0%, #00bcd4 100%); color: white;">
+                <i class="fas fa-hourglass-half"></i>
+            </div>
+            <div class="info-box-content">
+                <span class="info-box-text">Всего часов</span>
+                <span class="info-box-number">{{ workload_total }}</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if current_year %}
+<div class="row mt-2">
+    <div class="col-12">
+        <div class="alert alert-info alert-dismissible fade show" role="alert">
+            <i class="fas fa-info-circle"></i>
+            <strong>Текущий учебный год:</strong> {{ current_year.start_year }}-{{ current_year.end_year }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Main row -->
+<div class="row mt-4">
+    <!-- Left column -->
+    <div class="col-lg-6">
+        <!-- Reports Section -->
+        {% if request.user.profile.role in 'admin,dean,head'|add:" " %}
+        <div class="card card-outline card-outline-primary">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-chart-bar"></i> Быстрый доступ к отчётам
+                </h3>
+                <div class="card-tools">
+                    <span class="badge bg-primary">5 отчётов</span>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <a href="{% url 'hours_distribution:university_report' %}" class="list-item d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="mb-1">
+                            <i class="fas fa-university text-primary"></i> По университету
+                        </h6>
+                        <small class="text-muted">Полная статистика по ВУЗу</small>
+                    </div>
+                    <i class="fas fa-arrow-right text-muted"></i>
+                </a>
+                
+                <a href="{% url 'hours_distribution:faculty_report' %}" class="list-item d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="mb-1">
+                            <i class="fas fa-sitemap text-success"></i> По факультетам
+                        </h6>
+                        <small class="text-muted">Статистика факультетов</small>
+                    </div>
+                    <i class="fas fa-arrow-right text-muted"></i>
+                </a>
+                
+                <a href="{% url 'hours_distribution:department_report' %}" class="list-item d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="mb-1">
+                            <i class="fas fa-th-list text-warning"></i> По кафедрам
+                        </h6>
+                        <small class="text-muted">Распределение по кафедрам</small>
+                    </div>
+                    <i class="fas fa-arrow-right text-muted"></i>
+                </a>
+                
+                <a href="{% url 'hours_distribution:teacher_report' %}" class="list-item d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="mb-1">
+                            <i class="fas fa-chalkboard-teacher text-danger"></i> По преподавателям
+                        </h6>
+                        <small class="text-muted">Нагрузка отдельных преподавателей</small>
+                    </div>
+                    <i class="fas fa-arrow-right text-muted"></i>
+                </a>
+                <a href="{% url 'hours_distribution:group_workload_report' %}" class="list-item d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="mb-1">
+                            <i class="fas fa-users text-info"></i> По группам
+                        </h6>
+                        <small class="text-muted">Нагрузка на группы</small>
+                    </div>
+                    <i class="fas fa-arrow-right text-muted"></i>
+                </a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Right column -->
+    <div class="col-lg-6">
+        <!-- Management Section -->
+        {% if request.user.profile.role in 'admin,dean,head'|add:" " %}
+        <div class="card card-outline card-outline-success">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-cogs"></i> Управление
+                </h3>
+                <div class="card-tools">
+                    <span class="badge bg-success">4 инструмента</span>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <a href="{% url 'hours_distribution:student_groups_list' %}" class="list-item d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="mb-1">
+                            <i class="fas fa-graduation-cap text-primary"></i> Группы студентов
+                        </h6>
+                        <small class="text-muted">Просмотр и редактирование групп</small>
+                    </div>
+                    <i class="fas fa-arrow-right text-muted"></i>
+                </a>
+                
+                <a href="{% url 'hours_distribution:stream_groups_list' %}" class="list-item d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="mb-1">
+                            <i class="fas fa-layer-group text-success"></i> Поточные группы
+                        </h6>
+                        <small class="text-muted">Управление потоками</small>
+                    </div>
+                    <i class="fas fa-arrow-right text-muted"></i>
+                </a>
+                
+                <a href="{% url 'hours_distribution:distribute_workload' %}" class="list-item d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="mb-1">
+                            <i class="fas fa-tasks text-warning"></i> Распределить нагрузку
+                        </h6>
+                        <small class="text-muted">Добавить новую нагрузку</small>
+                    </div>
+                    <i class="fas fa-arrow-right text-muted"></i>
+                </a>
+                
+                <a href="{% url 'hours_distribution:workload_distribution_list' %}" class="list-item d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="mb-1">
+                            <i class="fas fa-list text-info"></i> Все распределения
+                        </h6>
+                        <small class="text-muted">Просмотр всех нагрузок</small>
+                    </div>
+                    <i class="fas fa-arrow-right text-muted"></i>
+                </a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- System Information -->
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card card-outline card-outline-info">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-info-circle"></i> Информация о системе
+                </h3>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <p><strong>Назначение системы:</strong></p>
+                        <p class="text-muted">Управление и учет учебной нагрузки преподавателей в высшем учебном заведении</p>
+                    </div>
+                    <div class="col-md-4">
+                        <p><strong>Основные функции:</strong></p>
+                        <ul class="text-muted pl-3">
+                            <li>Учет нагрузки преподавателей</li>
+                            <li>Распределение по дисциплинам</li>
+                            <li>Анализ и отчеты</li>
+                            <li>Планирование учебного процесса</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-4">
+                        <p><strong>Версия:</strong> 2.0</p>
+                        <p class="text-muted">Для важных изменений в данных используйте <a href="/admin/" class="font-weight-bold">админ-панель <i class="fas fa-external-link-alt" style="font-size: 0.8em;"></i></a></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

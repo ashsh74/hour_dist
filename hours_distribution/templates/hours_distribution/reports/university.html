@@ -1,0 +1,234 @@
+{% extends base_template %}
+{% load custom_filters %}
+
+{% block title %}Отчет по университету{% endblock %}
+
+{% block extra_css %}
+<style>
+    .chart-container {
+        height: 400px;
+        width: 100%;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h2>Отчет по университету</h2>
+        <p class="lead">{{ current_year.name }} | Общая статистика</p>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col">
+        <div class="card">
+            <div class="card-header bg-primary ">
+                <h5 class="mb-0 text-white">Общая статистика</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-2 text-center">
+                        <div class="display-6 text-primary">{{ total_stats.faculties_count }}</div>
+                        <p class="text-muted">Факультетов</p>
+                    </div>
+                    <div class="col-md-2 text-center">
+                        <div class="display-6 text-success">{{ total_stats.departments_count }}</div>
+                        <p class="text-muted">Кафедр</p>
+                    </div>
+                    <div class="col-md-2 text-center">
+                        <div class="display-6 text-info">{{ total_stats.teachers_count }}</div>
+                        <p class="text-muted">Преподавателей</p>
+                    </div>
+                    <div class="col-md-2 text-center">
+                        <div class="display-6 text-warning">{{ total_stats.total_hours }}</div>
+                        <p class="text-muted">Часов нагрузки</p>
+                    </div>
+                    <div class="col-md-2 text-center">
+                        <div class="display-6 text-danger">{{ total_stats.programs_count }}</div>
+                        <p class="text-muted">Направлений</p>
+                    </div>
+                    <div class="col-md-2 text-center">
+                        <div class="display-6 text-secondary">{{ total_stats.subjects_count }}</div>
+                        <p class="text-muted">Дисциплин</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if chart_data %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-success">
+                <h5 class="mb-0 text-white">Нагрузка по факультетам</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="facultyChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header bg-info">
+                <h5 class="mb-0 text-white">Распределение часов</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="hoursChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="row mb-4">
+    <div class="col">
+        <div class="card">
+            <div class="card-header bg-warning">
+                <h5 class="mb-0 text-white">Статистика по факультетам</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Факультет</th>
+                                <th>Кафедр</th>
+                                <th>Преподавателей</th>
+                                <th>Часов нагрузки</th>
+                                <th>Лекции</th>
+                                <th>Практики</th>
+                                <th>Лаб.</th>
+                                <th>Ср. нагрузка</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for stat in faculty_stats %}
+                            <tr>
+                                <td>
+                                    <strong>{{ stat.faculty.name }}</strong><br>
+                                    <small class="text-muted">{{ stat.faculty.short_name }}</small>
+                                </td>
+                                <td>{{ stat.departments_count }}</td>
+                                <td>{{ stat.teachers_count }}</td>
+                                <td><span class="badge bg-primary">{{ stat.total_hours }}</span></td>
+                                <td>{{ stat.lecture_hours }}</td>
+                                <td>{{ stat.practice_hours }}</td>
+                                <td>{{ stat.lab_hours }}</td>
+                                <td>
+                                    {% if stat.teachers_count > 0 %}
+                                        {{ stat.total_hours|divide:stat.teachers_count|floatformat:1 }} ч
+                                    {% else %}
+                                        0 ч
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot>
+                            <tr class="table-active">
+                                <td><strong>Итого:</strong></td>
+                                <td>{{ total_stats.departments_count }}</td>
+                                <td>{{ total_stats.teachers_count }}</td>
+                                <td><span class="badge bg-success">{{ total_stats.total_hours }}</span></td>
+                                <td>{{ hour_types.lecture }}</td>
+                                <td>{{ hour_types.practice }}</td>
+                                <td>{{ hour_types.lab }}</td>
+                                <td>
+                                    {% if total_stats.teachers_count > 0 %}
+                                        {{ total_stats.total_hours|divide:total_stats.teachers_count|floatformat:1 }} ч
+                                    {% else %}
+                                        0 ч
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    {% if chart_data %}
+    // График нагрузки по факультетам
+    const facultyCtx = document.getElementById('facultyChart').getContext('2d');
+    const facultyNames = {{ chart_data.faculty_names|safe }};
+    const facultyHours = {{ chart_data.faculty_hours|safe }};
+    
+    new Chart(facultyCtx, {
+        type: 'bar',
+        data: {
+            labels: facultyNames,
+            datasets: [{
+                label: 'Часы нагрузки',
+                data: facultyHours,
+                backgroundColor: 'rgba(75, 192, 192, 0.5)',
+                borderColor: 'rgba(75, 192, 192, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Часы'
+                    }
+                }
+            }
+        }
+    });
+    
+    // Круговая диаграмма распределения часов
+    const hoursCtx = document.getElementById('hoursChart').getContext('2d');
+    const hourTypes = {{ chart_data.hour_types|safe }};
+    const hourLabels = {{ chart_data.hour_labels|safe }};
+    
+    new Chart(hoursCtx, {
+        type: 'pie',
+        data: {
+            labels: hourLabels,
+            datasets: [{
+                data: hourTypes,
+                backgroundColor: [
+                    'rgba(54, 162, 235, 0.5)',
+                    'rgba(75, 192, 192, 0.5)',
+                    'rgba(255, 206, 86, 0.5)'
+                ],
+                borderColor: [
+                    'rgba(54, 162, 235, 1)',
+                    'rgba(75, 192, 192, 1)',
+                    'rgba(255, 206, 86, 1)'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+    {% endif %}
+});
+</script>
+{% endblock %}

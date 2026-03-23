@@ -1,0 +1,230 @@
+{% extends 'hours_distribution/base_head.html' %}
+
+{% block title %}Dashboard - Главная страница{% endblock %}
+{% block page_title %}Dashboard - Зав. кафедрой{% endblock %}
+{% block breadcrumb %}Главная{% endblock %}
+
+{% block extra_css %}
+<style>
+    .info-box {
+        margin-bottom: 2rem;
+        border-radius: 0.5rem;
+        overflow: hidden;
+    }
+    
+    .info-box-content {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding: 1.5rem;
+    }
+    
+    .info-box-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2.5rem;
+        width: 100px;
+        background: linear-gradient(135deg, rgba(0,0,0,.1), rgba(0,0,0,.05));
+    }
+    
+    .info-box-number {
+        font-size: 2rem;
+        font-weight: 700;
+        line-height: 1;
+    }
+    
+    .info-box-text {
+        font-size: 0.9rem;
+        margin-top: 0.5rem;
+        opacity: 0.8;
+    }
+    
+    .card-outline {
+        border-top: 3px solid;
+    }
+    
+    .card-outline-primary {
+        border-top-color: #667eea;
+    }
+    
+    .card-outline-success {
+        border-top-color: #28a745;
+    }
+    
+    .card-outline-info {
+        border-top-color: #17a2b8;
+    }
+    
+    .list-item {
+        padding: 1rem;
+        border-left: 4px solid transparent;
+        transition: all 0.3s ease;
+    }
+    
+    .list-item:hover {
+        background-color: #f8f9fa;
+        border-left-color: #667eea;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Department Info Alert -->
+<div class="row">
+    <div class="col-12">
+        <div class="alert alert-info alert-dismissible fade show" role="alert">
+            <i class="fas fa-sitemap"></i>
+            <strong>Ваша кафедра:</strong> {% if user.profile.department %}{{ user.profile.department.name }}{% else %}Не назначена{% endif %}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    </div>
+</div>
+
+<!-- Info boxes for department -->
+<div class="row">
+    <!-- Teachers in department -->
+    <div class="col-md-3 col-sm-6 col-12">
+        <div class="info-box bg-light-success">
+            <div class="info-box-icon" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white;">
+                <i class="fas fa-chalkboard-teacher"></i>
+            </div>
+            <div class="info-box-content">
+                <span class="info-box-text">Преподаватели</span>
+                <span class="info-box-number">{{ teachers_count }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Total Hours -->
+    <div class="col-md-3 col-sm-6 col-12">
+        <div class="info-box bg-light-info">
+            <div class="info-box-icon" style="background: linear-gradient(135deg, #17a2b8 0%, #00bcd4 100%); color: white;">
+                <i class="fas fa-hourglass-half"></i>
+            </div>
+            <div class="info-box-content">
+                <span class="info-box-text">Всего часов</span>
+                <span class="info-box-number">{{ workload_total }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Groups count -->
+    <div class="col-md-3 col-sm-6 col-12">
+        <div class="info-box bg-light-warning">
+            <div class="info-box-icon" style="background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%); color: white;">
+                <i class="fas fa-graduation-cap"></i>
+            </div>
+            <div class="info-box-content">
+                <span class="info-box-text">Студ. групп</span>
+                <span class="info-box-number">{{ groups_count }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stream groups -->
+    <div class="col-md-3 col-sm-6 col-12">
+        <div class="info-box bg-light-primary">
+            <div class="info-box-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                <i class="fas fa-layer-group"></i>
+            </div>
+            <div class="info-box-content">
+                <span class="info-box-text">Потоки</span>
+                <span class="info-box-number">{{ stream_groups_count }}</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Main row -->
+<div class="row mt-4">
+    <!-- Left column -->
+    <div class="col-lg-6">
+        <!-- Reports Section -->
+        <div class="card card-outline card-outline-primary">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-chart-bar"></i> Отчёты кафедры
+                </h3>
+                <div class="card-tools">
+                    <span class="badge bg-primary">2 отчёта</span>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <a href="{% url 'hours_distribution:faculty_report' %}" class="list-item d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="mb-1">
+                            <i class="fas fa-sitemap text-primary"></i> По факультету
+                        </h6>
+                        <small class="text-muted">Статистика факультета</small>
+                    </div>
+                    <i class="fas fa-arrow-right text-muted"></i>
+                </a>
+                
+                <a href="{% url 'hours_distribution:department_report' %}" class="list-item d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="mb-1">
+                            <i class="fas fa-th-list text-success"></i> По кафедре
+                        </h6>
+                        <small class="text-muted">Статистика вашей кафедры</small>
+                    </div>
+                    <i class="fas fa-arrow-right text-muted"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right column -->
+    <div class="col-lg-6">
+        <!-- Administration Section -->
+        <div class="card card-outline card-outline-success">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-cogs"></i> Администрирование
+                </h3>
+                <div class="card-tools">
+                    <span class="badge bg-success">1 инструмент</span>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <a href="{% url 'hours_distribution:teacher_list' %}" class="list-item d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="mb-1">
+                            <i class="fas fa-chalkboard-teacher text-success"></i> Преподаватели кафедры
+                        </h6>
+                        <small class="text-muted">Управление преподавателями</small>
+                    </div>
+                    <i class="fas fa-arrow-right text-muted"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Additional Actions -->
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card card-outline card-outline-info">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-tasks"></i> Дополнительные действия
+                </h3>
+            </div>
+            <div class="card-body">
+                <a href="{% url 'hours_distribution:teacher_report' %}" class="btn btn-outline-primary btn-sm mr-2">
+                    <i class="fas fa-users"></i> Нагрузка преподавателей
+                </a>
+                <a href="{% url 'hours_distribution:group_workload_report' %}" class="btn btn-outline-info btn-sm mr-2">
+                    <i class="fas fa-graduation-cap"></i> Нагрузка групп
+                </a>
+                <a href="{% url 'hours_distribution:distribute_workload' %}" class="btn btn-outline-success btn-sm mr-2">
+                    <i class="fas fa-plus"></i> Новая нагрузка
+                </a>
+                <a href="{% url 'hours_distribution:workload_distribution_list' %}" class="btn btn-outline-warning btn-sm">
+                    <i class="fas fa-list"></i> Все нагрузки
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

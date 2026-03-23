@@ -1,0 +1,235 @@
+{% extends base_template %}
+
+{% block title %}Отчет по нагрузке групп{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h2>Отчет по нагрузке групп студентов</h2>
+        <p class="lead">Статистика учебной нагрузки с учетом групп и потоков</p>
+    </div>
+    <div class="col-md-4 text-end">
+        <a href="{% url 'hours_distribution:export_group_report' %}{% if request.GET %}?{{ request.GET.urlencode }}{% endif %}" 
+            class="btn btn-success">
+            <i class="fas fa-file-excel"></i> Экспорт в Excel
+        </a>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-white bg-primary">
+            <div class="card-body text-center">
+                <h5 class="card-title">Групп/потоков</h5>
+                <p class="card-text display-6">{{ total_groups }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-success">
+            <div class="card-body text-center">
+                <h5 class="card-title">Всего часов</h5>
+                <p class="card-text display-6">{{ total_hours }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-info">
+            <div class="card-body text-center">
+                <h5 class="card-title">Студентов</h5>
+                <p class="card-text display-6">{{ total_students }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-warning">
+            <div class="card-body text-center">
+                <h5 class="card-title">На студента</h5>
+                <p class="card-text display-6">
+                    {% if total_students > 0 %}
+                        {{ total_hours|divisibleby:total_students|floatformat:1 }}
+                    {% else %}
+                        0
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="row mb-4">
+    <div class="col">
+        <div class="card">
+            <div class="card-header bg-info">
+                <h5 class="mb-0 text-white">Фильтры</h5>
+            </div>
+            <div class="card-body">
+                <form method="get" class="row g-3">
+                    <div class="col-md-3">
+                        <label for="department" class="form-label">Кафедра:</label>
+                        <select name="department" id="department" class="form-select">
+                            <option value="">Все кафедры</option>
+                            {% for department in departments %}
+                            <option value="{{ department.id }}" {% if request.GET.department == department.id|stringformat:"i" %}selected{% endif %}>
+                                {{ department.short_name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="course" class="form-label">Курс:</label>
+                        <select name="course" id="course" class="form-select">
+                            <option value="">Все курсы</option>
+                            {% for course in courses %}
+                            <option value="{{ course.id }}" {% if request.GET.course == course.id|stringformat:"i" %}selected{% endif %}>
+                                {{ course.number }} курс
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="group_type" class="form-label">Тип группы:</label>
+                        <select name="group_type" id="group_type" class="form-select">
+                            <option value="">Все типы</option>
+                            <option value="single" {% if request.GET.group_type == 'single' %}selected{% endif %}>Обычные группы</option>
+                            <option value="stream" {% if request.GET.group_type == 'stream' %}selected{% endif %}>Потоковые группы</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">&nbsp;</label>
+                        <div>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-filter"></i> Применить
+                            </button>
+                            <a href="{% url 'hours_distribution:group_workload_report' %}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Сбросить
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="row">
+    <div class="col">
+        <div class="card">
+            <div class="card-header bg-primary ">
+                <h5 class="mb-0 text-white">Нагрузка по группам и потокам</h5>
+            </div>
+            <div class="card-body">
+                {% if report_data %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Группа/Поток</th>
+                                <th>Тип</th>
+                                <th>Студентов</th>
+                                <th>Лекции</th>
+                                <th>Практики</th>
+                                <th>Лаб.</th>
+                                <th>Всего часов</th>
+                                <th>Часов/студ.</th>
+                                <th>Дисциплины</th>
+                                <th>Преподаватели</th>
+                                {% if not request.GET.group_type %}
+                                <th>Состав</th>
+                                {% endif %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for data in report_data %}
+                            <tr class="{% cycle 'table-light' '' %} {% if forloop.counter > 0 %}table-info{% endif %}">
+                                <td>
+                                    <strong>{{ data.name }}</strong>
+                                </td>
+                                <td>
+                                    <span class="badge bg-{% if data.type == 'group' %}secondary{% else %}info{% endif %}">
+                                        {{ data.type_display }}
+                                    </span>
+                                </td>
+                                <td>{{ data.students_count }}</td>
+                                <td>{{ data.lecture }}</td>
+                                <td>{{ data.practice }}</td>
+                                <td>{{ data.lab }}</td>
+                                <td>
+                                    <span class="badge bg-primary">{{ data.total_hours }}</span>
+                                </td>
+                                <td>
+                                    {% if data.students_count > 0 %}
+                                        <span class="badge bg-success">
+                                            {{ data.total_hours|divisibleby:data.students_count|floatformat:1 }}
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">0</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% for subject in data.subjects|slice:":3" %}
+                                    <span class="badge bg-secondary mb-1">{{ subject }}</span><br>
+                                    {% endfor %}
+                                    {% if data.subjects|length > 3 %}
+                                    <span class="badge bg-info">+{{ data.subjects|length|add:"-3" }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% for teacher in data.teachers|slice:":2" %}
+                                    <small class="d-block">{{ teacher }}</small>
+                                    {% endfor %}
+                                    {% if data.teachers|length > 2 %}
+                                    <span class="badge bg-info">+{{ data.teachers|length|add:"-2" }}</span>
+                                    {% endif %}
+                                </td>
+                                {% if not request.GET.group_type and data.type == 'stream' %}
+                                <td>
+                                    <button type="button" class="btn btn-sm btn-outline-info" 
+                                            data-bs-toggle="popover" 
+                                            data-bs-title="Группы в потоке"
+                                            data-bs-content="
+                                                {% for group in data.group.student_groups.all|slice:":5" %}
+                                                {{ group }}<br>
+                                                {% endfor %}
+                                                {% if data.group.student_groups.all|length > 5 %}
+                                                ... и еще {{ data.group.student_groups.all|length|add:"-5" }} групп
+                                                {% endif %}
+                                            "
+                                            data-bs-html="true">
+                                        <i class="fas fa-users"></i> {{ data.group.student_groups.all|length }}
+                                    </button>
+                                </td>
+                                {% elif not request.GET.group_type %}
+                                <td>-</td>
+                                {% endif %}
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-chart-bar fa-4x text-muted mb-3"></i>
+                    <h4>Нет данных для отображения</h4>
+                    <p class="text-muted">Попробуйте изменить параметры фильтрации</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Активируем popovers
+    var popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'))
+    var popoverList = popoverTriggerList.map(function (popoverTriggerEl) {
+        return new bootstrap.Popover(popoverTriggerEl)
+    })
+});
+</script>
+{% endblock %}

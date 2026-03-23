@@ -1,0 +1,191 @@
+{% extends base_template %}
+
+{% block title %}Поточные группы{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h2>Поточные группы</h2>
+        <p class="lead">Объединение групп студентов для лекционных занятий</p>
+    </div>
+    <div class="col-md-4 text-end">
+        <a href="{% url 'hours_distribution:create_stream_group' %}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Создать поток
+        </a>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">Фильтры</h5>
+            </div>
+            <div class="card-body">
+                <form method="get" class="row g-3">
+                    <div class="col-md-3">
+                        <label for="course" class="form-label">Курс:</label>
+                        <select name="course" id="course" class="form-select">
+                            <option value="">Все курсы</option>
+                            {% for course in courses %}
+                            <option value="{{ course.id }}" {% if request.GET.course == course.id|stringformat:"i" %}selected{% endif %}>
+                                {{ course.number }} курс
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="bachelor_program" class="form-label">Направление:</label>
+                        <select name="bachelor_program" id="bachelor_program" class="form-select">
+                            <option value="">Все направления</option>
+                            {% for bachelor_program in bachelor_programs %}
+                            <option value="{{ bachelor_program.id }}" {% if request.GET.bachelor_program == bachelor_program.id|stringformat:"i" %}selected{% endif %}>
+                                {{ bachelor_program.code }}-{{ bachelor_program.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="year" class="form-label">Учебный год:</label>
+                        <select name="year" id="year" class="form-select">
+                            <option value="">Все годы</option>
+                            {% for year in years %}
+                            <option value="{{ year.id }}" {% if request.GET.year == year.id|stringformat:"i" %}selected{% endif %}>
+                                {{ year.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">&nbsp;</label>
+                        <div>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-filter"></i> Применить
+                            </button>
+                            <a href="{% url 'hours_distribution:stream_groups_list' %}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Сбросить
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-white bg-primary">
+            <div class="card-body text-center">
+                <h5 class="card-title">Всего потоков</h5>
+                <p class="card-text display-6">{{ total_streams }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-success">
+            <div class="card-body text-center">
+                <h5 class="card-title">Студентов</h5>
+                <p class="card-text display-6">{{ total_students }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-info">
+            <div class="card-body text-center">
+                <h5 class="card-title">Ср. групп в потоке</h5>
+                <p class="card-text display-6">{{ avg_groups_per_stream }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-warning">
+            <div class="card-body text-center">
+                <h5 class="card-title">Ср. студентов</h5>
+                <p class="card-text display-6">
+                    {% if total_streams > 0 %}
+                        {{ total_students|divisibleby:total_streams|floatformat:1 }}
+                    {% else %}
+                        0
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Список поточных групп</h5>
+            </div>
+            <div class="card-body">
+                {% if streams %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Код потока</th>
+                                <th>Название</th>
+                                <th>Направление</th>
+                                <th>Курс</th>
+                                <th>Семестр</th>
+                                <th>Групп</th>
+                                <th>Студентов</th>
+                                <th>Учебный год</th>
+                                <th>Действия</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for stream in streams %}
+                            <tr class="{% cycle 'table-light' '' %} {% if forloop.counter > 0 %}table-info{% endif %}">
+                                <td><strong>{{ stream.code }}</strong></td>
+                                <td>{{ stream.name }}</td>
+                                <td>
+                                    {{ stream.bachelor_program.code }}<br>
+                                    <small class="text-muted">{{ stream.bachelor_program.name }}</small>
+                                </td>
+                                <td>{{ stream.course.number }} курс</td>
+                                <td>{{ stream.semester.number }} семестр</td>
+                                <td>
+                                    <span class="badge bg-info">{{ stream.student_groups.count }}</span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-success">{{ stream.total_students }}</span>
+                                </td>
+                                <td>{{ stream.academic_year.name }}</td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="{% url 'hours_distribution:stream_group_detail' stream.id %}" 
+                                           class="btn btn-outline-primary" title="Просмотр">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a href="{% url 'admin:hours_distribution_streamgroup_change' stream.id %}" 
+                                           class="btn btn-outline-secondary" title="Редактировать">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-users fa-4x text-muted mb-3"></i>
+                    <h4>Поточные группы не найдены</h4>
+                    <p class="text-muted">
+                        Создайте первую поточную группу для объединения студентов на лекции
+                    </p>
+                    <a href="{% url 'hours_distribution:create_stream_group' %}" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Создать поток
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

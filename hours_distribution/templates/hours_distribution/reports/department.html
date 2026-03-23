@@ -1,0 +1,96 @@
+{% extends base_template %}
+
+{% block title %}Отчеты по кафедрам{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h2>Отчеты по кафедрам</h2>
+        <p class="lead">Выберите кафедру для просмотра отчета</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Все кафедры</h5>
+            </div>
+            <div class="card-body">
+                {% if departments %}
+                <div class="row">
+                    <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>№</th>
+                            <th>Кафедра</th>
+                            <th>Сокращённое название</th>
+                            <th>Количество преподавателей</th>                            
+                            <th>Действия</th>
+                        </tr>
+                    </thead>
+                    {% for department in departments %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td>{{ department.name }}</td>
+                        <td class="text-center">{{ department.faculty.short_name }}</td>
+                        <td class="text-center">
+                            {% with teachers_count=department.teacher_set.count %}{{ teachers_count }}{% endwith %}
+                        </td>
+
+                        <td class="">
+                            <a href="{% url 'hours_distribution:department_report_detail' department.id %}" class="btn btn-primary btn-sm">
+                                <i class="fas fa-chart-bar"></i>                                 
+                            </a>
+                            <a href="{% url 'hours_distribution:export_report' 'department' %}?format=excel&department={{ department.id }}" class="btn btn-success btn-sm">
+                                <i class="fas fa-file-excel"></i>                                 
+                            </a>
+                            <a href="{% url 'hours_distribution:export_report' 'department' %}?format=pdf&department={{ department.id }}" class="btn btn-danger btn-sm">
+                                <i class="fas fa-file-pdf"></i>                                 
+                            </a>
+                        </td>
+                    </tr>
+                    {% comment %}
+                                        
+                      <div class="col-md-4 mb-3">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ department.name }}</h5>
+                                <h6 class="card-subtitle mb-2 text-muted">
+                                    {{ department.faculty.short_name }}
+                                </h6>
+                                <p class="card-text">
+                                    <small>
+                                        {% with teachers_count=department.teacher_set.count %}
+                                        Преподавателей: {{ teachers_count }}
+                                        {% endwith %}
+                                    </small>
+                                </p>
+                                <div class="d-grid gap-2">
+                                    <a href="{% url 'hours_distribution:department_report_detail' department.id %}" 
+                                       class="btn btn-primary btn-sm">
+                                        <i class="fas fa-chart-bar"></i> Просмотр отчета
+                                    </a>
+                                    <a href="{% url 'hours_distribution:export_report' 'department' %}?format=excel&department={{ department.id }}" 
+                                       class="btn btn-success btn-sm">
+                                        <i class="fas fa-file-excel"></i> Excel
+                                    </a>
+                                    <a href="{% url 'hours_distribution:export_report' 'department' %}?format=pdf&department={{ department.id }}" 
+                                       class="btn btn-danger btn-sm">
+                                        <i class="fas fa-file-pdf"></i> PDF
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div> {% endcomment %}
+                    {% endfor %}
+                </table>
+                </div>
+                {% else %}
+                <p class="text-muted">Кафедры не найдены</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

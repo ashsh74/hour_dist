@@ -1,0 +1,205 @@
+{% extends 'hours_distribution/base_planner.html' %}
+
+{% block title %}Dashboard - Главная страница{% endblock %}
+{% block page_title %}Dashboard - Планировщик{% endblock %}
+{% block breadcrumb %}Главная{% endblock %}
+
+{% block extra_css %}
+<style>
+    .info-box {
+        margin-bottom: 2rem;
+        border-radius: 0.5rem;
+        overflow: hidden;
+    }
+    
+    .info-box-content {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding: 1.5rem;
+    }
+    
+    .info-box-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2.5rem;
+        width: 100px;
+        background: linear-gradient(135deg, rgba(0,0,0,.1), rgba(0,0,0,.05));
+    }
+    
+    .info-box-number {
+        font-size: 2rem;
+        font-weight: 700;
+        line-height: 1;
+    }
+    
+    .info-box-text {
+        font-size: 0.9rem;
+        margin-top: 0.5rem;
+        opacity: 0.8;
+    }
+    
+    .card-outline {
+        border-top: 3px solid;
+    }
+    
+    .card-outline-primary {
+        border-top-color: #667eea;
+    }
+    
+    .card-outline-info {
+        border-top-color: #17a2b8;
+    }
+    
+    .list-item {
+        padding: 1rem;
+        border-left: 4px solid transparent;
+        transition: all 0.3s ease;
+    }
+    
+    .list-item:hover {
+        background-color: #f8f9fa;
+        border-left-color: #667eea;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Welcome Card -->
+<div class="row">
+    <div class="col-12">
+        <div class="alert alert-info alert-dismissible fade show" role="alert">
+            <i class="fas fa-calendar-check"></i>
+            <strong>Режим планировщика:</strong> Вы имеете доступ к функциям планирования и анализа распределения нагрузки.
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    </div>
+</div>
+
+<!-- Statistics -->
+<div class="row">
+    <!-- Total hours -->
+    <div class="col-md-3 col-sm-6 col-12">
+        <div class="info-box bg-light-primary">
+            <div class="info-box-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                <i class="fas fa-hourglass-half"></i>
+            </div>
+            <div class="info-box-content">
+                <span class="info-box-text">Всего часов</span>
+                <span class="info-box-number">{{ workload_total }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Student Groups -->
+    <div class="col-md-3 col-sm-6 col-12">
+        <div class="info-box bg-light-success">
+            <div class="info-box-icon" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white;">
+                <i class="fas fa-graduation-cap"></i>
+            </div>
+            <div class="info-box-content">
+                <span class="info-box-text">Студ. групп</span>
+                <span class="info-box-number">{{ groups_count }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stream Groups -->
+    <div class="col-md-3 col-sm-6 col-12">
+        <div class="info-box bg-light-warning">
+            <div class="info-box-icon" style="background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%); color: white;">
+                <i class="fas fa-layer-group"></i>
+            </div>
+            <div class="info-box-content">
+                <span class="info-box-text">Поток. групп</span>
+                <span class="info-box-number">{{ stream_groups_count }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Current Year -->
+    <div class="col-md-3 col-sm-6 col-12">
+        <div class="info-box bg-light-info">
+            <div class="info-box-icon" style="background: linear-gradient(135deg, #17a2b8 0%, #00bcd4 100%); color: white;">
+                <i class="fas fa-calendar-alt"></i>
+            </div>
+            <div class="info-box-content">
+                <span class="info-box-text">Учеб. год</span>
+                <span class="info-box-number">{% if current_year %}{{ current_year.start_year|slice:"2:" }}{% else %}—{% endif %}</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Main Content -->
+<div class="row mt-4">
+    <!-- Left column -->
+    <div class="col-lg-6">
+        <!-- Reports Section -->
+        <div class="card card-outline card-outline-primary">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-chart-bar"></i> Отчёты
+                </h3>
+            </div>
+            <div class="card-body p-0">
+                <a href="{% url 'hours_distribution:group_workload_report' %}" class="list-item d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="mb-1">
+                            <i class="fas fa-users text-primary"></i> Нагрузка по группам
+                        </h6>
+                        <small class="text-muted">Анализ распределения часов по студентам</small>
+                    </div>
+                    <i class="fas fa-arrow-right text-muted"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right column -->
+    <div class="col-lg-6">
+        <!-- Planning Section -->
+        <div class="card card-outline card-outline-info">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-calendar-alt"></i> Планирование
+                </h3>
+            </div>
+            <div class="card-body p-0">
+                <a href="{% url 'hours_distribution:next_year_plan' %}" class="list-item d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="mb-1">
+                            <i class="fas fa-tasks text-info"></i> План на следующий год
+                        </h6>
+                        <small class="text-muted">Управление планом обучения</small>
+                    </div>
+                    <i class="fas fa-arrow-right text-muted"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Information Card -->
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card card-outline card-outline-info">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-lightbulb"></i> Режим планировщика
+                </h3>
+            </div>
+            <div class="card-body">
+                <p><strong>Основной функционал:</strong></p>
+                <ul class="text-muted pl-3">
+                    <li>Просмотр отчётов по распределению нагрузки студентов</li>
+                    <li>Управление планом обучения на следующий год</li>
+                    <li>Анализ текущего учебного плана</li>
+                    <li>Экспорт отчётов в Excel и PDF</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

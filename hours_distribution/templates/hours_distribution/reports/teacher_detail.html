@@ -1,0 +1,126 @@
+{% extends base_template %}
+{% load custom_filters %}
+
+{% block title %}Отчет по преподавателю {{ teacher.last_name }} {{ teacher.first_name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .progress {
+        height: 20px;
+    }
+    .table-hover tbody tr:hover {
+        background-color: rgba(0, 123, 255, 0.1);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h2>Отчет по преподавателю: {{ teacher.last_name }} {{ teacher.first_name }} {{ teacher.middle_name }}</h2>
+        <p class="lead">{{ teacher.department.name }} | {{ current_year.name }}</p>
+    </div>
+    <div class="col-md-4 text-end">
+        <div class="btn-group">
+            <a href="{% url 'hours_distribution:teacher_report' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> Назад к списку
+            </a>
+            <a href="{% url 'hours_distribution:export_report' 'teacher' %}?format=excel&teacher={{ teacher.id }}" 
+               class="btn btn-success">
+                <i class="fas fa-file-excel"></i> Excel
+            </a>
+            <a href="{% url 'hours_distribution:export_report' 'teacher' %}?format=pdf&teacher={{ teacher.id }}" 
+               class="btn btn-danger">
+                <i class="fas fa-file-pdf"></i> PDF
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-white bg-success">
+            <div class="card-body text-center">
+                <h5 class="card-title">Всего часов</h5>
+                <p class="card-text display-6">{{ total_hours }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-info">
+            <div class="card-body text-center">
+                <h5 class="card-title">Лекции</h5>
+                <p class="card-text display-6">{{ hour_types.lecture }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-warning">
+            <div class="card-body text-center">
+                <h5 class="card-title">Практики</h5>
+                <p class="card-text display-6">{{ hour_types.practice }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-danger">
+            <div class="card-body text-center">
+                <h5 class="card-title">% нагрузки</h5>
+                <p class="card-text display-6">{{ workload_percentage }}%</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col">
+        <div class="card">
+            <div class="card-header bg-primary">
+                <h5 class="mb-0 text-white">Нагрузка по дисциплинам</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Дисциплина</th>
+                                <th>Группа</th>
+                                <th>Курс</th>
+                                <th>Семестр</th>
+                                <th>Лекции</th>
+                                <th>Практики</th>
+                                <th>Лаб.</th>
+                                <th>Всего</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for wl in workloads %}
+                            <tr class="{% cycle 'table-light' '' %} {% if wl.total_hours > 0 %}table-info{% endif %}">
+                                <td>{{ wl.curriculum_subject.subject.name }}</td>
+                                <td>
+                                    {% if wl.curriculum_subject_group.student_group %}
+                                        <span class="badge bg-secondary">Группа: {{ wl.curriculum_subject_group.student_group.code }}</span>
+                                    {% else %}
+                                        <span class="badge bg-info">Поток: {{ wl.curriculum_subject_group.stream_group.code }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ wl.curriculum_subject.course.number }} курс</td>
+                                <td>{{ wl.curriculum_subject.semester }}</td>
+                                <td><span class="badge bg-info w-50">{{ wl.hours_lecture }}</span></td>
+                                <td><span class="badge bg-success w-50">{{ wl.hours_practice }}</span></td>
+                                <td><span class="badge bg-warning w-50">{{ wl.hours_lab }}</span></td>
+                                <td><span class="badge bg-primary w-50">{{ wl.total_hours }}</span></td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="8" class="text-center">Нет данных о нагрузке</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

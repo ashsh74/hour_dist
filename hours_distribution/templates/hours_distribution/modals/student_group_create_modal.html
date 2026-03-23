@@ -1,0 +1,121 @@
+{% load custom_filters %}
+
+<div class="modal-header bg-primary text-white">
+    <h5 class="modal-title">Создание новой группы</h5>
+    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+</div>
+
+<div class="modal-body">
+    <form id="studentGroupCreateForm" method="post" action="{% url 'hours_distribution:student_group_store_modal' %}">
+        {% csrf_token %}
+        
+        <!-- Основная информация -->
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <label for="id_code" class="form-label">{{ form.code.label }} <span class="text-danger">*</span></label>
+                {{ form.code }}
+                <small class="form-text text-muted">Уникальный идентификатор группы</small>
+                <div class="invalid-feedback" id="error_code"></div>
+            </div>
+            <div class="col-md-6">
+                <label for="id_name" class="form-label">{{ form.name.label }} <span class="text-danger">*</span></label>
+                {{ form.name }}
+                <div class="invalid-feedback" id="error_name"></div>
+            </div>
+        </div>
+
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <label for="id_course" class="form-label">{{ form.course.label }} <span class="text-danger">*</span></label>
+                {{ form.course }}
+                <div class="invalid-feedback" id="error_course"></div>
+            </div>
+            <div class="col-md-6">
+                <label for="id_bachelor_program" class="form-label">{{ form.bachelor_program.label }} <span class="text-danger">*</span></label>
+                {{ form.bachelor_program }}
+                <div class="invalid-feedback" id="error_bachelor_program"></div>
+            </div>
+        </div>
+
+        <hr>
+
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <label for="id_year_of_admission" class="form-label">{{ form.year_of_admission.label }} <span class="text-danger">*</span></label>
+                {{ form.year_of_admission }}
+                <small class="form-text text-muted">Год поступления</small>
+                <div class="invalid-feedback" id="error_year_of_admission"></div>
+            </div>
+            <div class="col-md-6">
+                <label for="id_group_type" class="form-label">{{ form.group_type.label }}</label>
+                {{ form.group_type }}
+                <div class="invalid-feedback" id="error_group_type"></div>
+            </div>
+        </div>
+
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <label for="id_students_count" class="form-label">{{ form.students_count.label }}</label>
+                {{ form.students_count }}
+                <small class="form-text text-muted">Текущее количество студентов</small>
+                <div class="invalid-feedback" id="error_students_count"></div>
+            </div>
+            <div class="col-md-6">
+                <label for="id_max_students" class="form-label">{{ form.max_students.label }}</label>
+                {{ form.max_students }}
+                <small class="form-text text-muted">Максимальное количество</small>
+                <div class="invalid-feedback" id="error_max_students"></div>
+            </div>
+        </div>
+
+        <div class="row mb-3">
+            <div class="col-12">
+                <div class="form-check">
+                    {{ form.is_active }}
+                    <label class="form-check-label" for="id_is_active">
+                        {{ form.is_active.label }}
+                    </label>
+                </div>
+            </div>
+        </div>
+    </form>
+
+    <div id="alertContainer"></div>
+</div>
+
+<div class="modal-footer">
+    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+    <button type="submit" class="btn btn-primary" id="submitBtn" form="studentGroupCreateForm">
+        <span class="spinner-border spinner-border-sm d-none" id="spinner" role="status" aria-hidden="true"></span>
+        Создать группу
+    </button>
+</div>
+
+<script>
+// Инициализируем обработчик формы сразу же (не ждем DOMContentLoaded)
+(function() {
+    console.log('Инициализируем обработчик формы создания группы');
+    
+    // Маленькая задержка, чтобы убедиться, что DOM полностью загружен
+    setTimeout(function() {
+        const form = document.getElementById('studentGroupCreateForm');
+        
+        if (!form) {
+            console.error('Форма studentGroupCreateForm не найдена');
+            return;
+        }
+        
+        console.log('Форма найдена, добавляем обработчик submit');
+        
+        // Удаляем старый обработчик если есть
+        const newForm = form.cloneNode(true);
+        form.parentNode.replaceChild(newForm, form);
+        
+        // Добавляем обработчик на новую форму
+        const updatedForm = document.getElementById('studentGroupCreateForm');
+        updatedForm.addEventListener('submit', handleCreateFormSubmit);
+        
+        console.log('Обработчик submit добавлен');
+    }, 0);
+})();
+</script>

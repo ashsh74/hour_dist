@@ -1,0 +1,114 @@
+{% extends base_template %}
+
+{% block title %}Преподаватели{% endblock %}
+{% block page_title %}Преподаватели{% endblock %}
+{% block breadcrumb %}Преподаватели{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h2>Список преподавателей</h2>
+    </div>
+    <div class="col-md-4 text-end">
+        <a href="{% url 'hours_distribution:teacher_create' %}" class="btn btn-primary">
+            <i class="fas fa-user-plus"></i> Новый преподаватель
+        </a>
+    </div>
+</div>
+
+<!-- Filter form -->
+<div class="card mb-4">
+    <div class="card-header bg-info text-white">
+        <h5 class="mb-0">Фильтры</h5>
+    </div>
+    
+    <div class="card-body">
+    
+        <form method="get" class="row g-4 mb-4">
+            <div class="col-md-3">
+                <input type="text" name="last_name" class="form-control" placeholder="Фамилия" value="{{ filter_last_name }}">
+            </div>
+            <div class="col-md-3">
+                <select name="department" class="form-select">
+                    <option value="">Все кафедры</option>
+                    {% for dept in departments %}
+                        <option value="{{ dept.id }}" {% if filter_department|stringformat:'s' == dept.id|stringformat:'s' %}selected{% endif %}>{{ dept.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4 text-end">
+                <button type="submit" class="btn btn-outline-primary"><i class="fas fa-filter"></i> Применить</button>
+                <a href="?" class="btn btn-outline-secondary"><i class="fas fa-times"></i> Сбросить</a>
+            </div>
+        </form>
+    </div>
+
+</div>
+
+
+<div class="card">
+    <div class="card-header bg-secondary text-white">
+        <h5 class="mb-0">Преподаватели</h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Фамилия</th>
+                        <th>Имя</th>
+                        <th>Отчество</th>
+                        <th>Должность</th>
+                        <th>Действия</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for teacher in teachers %}
+                    <tr>
+                        <td>{{ teacher.last_name }}</td>
+                        <td>{{ teacher.first_name }}</td>
+                        <td>{{ teacher.patronymic }}</td>
+                        <td>{{ teacher.position }}</td>
+                        <td>
+                            <a href="{% url 'hours_distribution:teacher_update' teacher.pk %}" class="btn btn-sm btn-outline-success" title="Изменить">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <a href="{% url 'hours_distribution:teacher_delete' teacher.pk %}" class="btn btn-sm btn-outline-danger" title="Удалить">
+                                <i class="fas fa-trash"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center">Преподаватели не найдены</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% if page_obj.has_other_pages %}
+        <nav aria-label="Навигация по страницам">
+            <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Назад</a>
+                </li>
+                {% endif %}
+                {% for num in page_obj.paginator.page_range %}
+                    {% if page_obj.number == num %}
+                    <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                    <li class="page-item"><a class="page-link" href="?page={{ num }}">{{ num }}</a></li>
+                    {% endif %}
+                {% endfor %}
+                {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}">Вперед</a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

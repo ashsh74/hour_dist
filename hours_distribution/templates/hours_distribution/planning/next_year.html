@@ -1,0 +1,139 @@
+{% extends base_template %}
+
+{% block title %}Планирование на следующий год{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h2>Планирование нагрузки на {{ next_year.name }}</h2>
+        <p class="lead">На основе данных текущего года ({{ current_year.name }})</p>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Генерация планов</h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="generate_plan">
+                    
+                    <div class="mb-3">
+                        <label for="department" class="form-label">Выберите кафедру:</label>
+                        <select class="form-select" id="department" name="department" required>
+                            <option value="">-- Выберите кафедру --</option>
+                            {% for department in departments %}
+                            <option value="{{ department.id }}">{{ department.name }} ({{ department.faculty.short_name }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <strong>Внимание!</strong> Будет создан предварительный план на основе текущей нагрузки.
+                        После создания вы сможете отредактировать и оптимизировать план.
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-magic"></i> Сгенерировать план
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">Существующие планы</h5>
+            </div>
+            <div class="card-body">
+                {% if existing_plans %}
+                <div class="list-group">
+                    {% for plan in existing_plans %}
+                    <a href="{% url 'hours_distribution:plan_detail' plan.id %}" 
+                       class="list-group-item list-group-item-action">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">{{ plan.department.short_name }}</h6>
+                            <span class="badge bg-{{ plan.status|yesno:'success,warning,info' }}">
+                                {{ plan.get_status_display }}
+                            </span>
+                        </div>
+                        <small class="text-muted">
+                            Создан: {{ plan.created_at|date:"d.m.Y" }}
+                            {% if plan.created_by %}
+                            пользователем {{ plan.created_by.get_full_name }}
+                            {% endif %}
+                        </small>
+                    </a>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-muted">Планы еще не созданы</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">Статус планирования</h5>
+            </div>
+            <div class="card-body">
+                <div class="progress mb-2">
+                    <div class="progress-bar" role="progressbar" 
+                         style="width: {% widthratio existing_plans|length departments|length 100 %}%">
+                        {{ existing_plans|length }} из {{ departments|length }}
+                    </div>
+                </div>
+                <p class="mb-0">
+                    <small class="text-muted">
+                        Завершено: {% widthratio existing_plans|length departments|length 100 %}%
+                    </small>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if profile.role == 'admin' or profile.role == 'planner' %}
+<div class="row">
+    <div class="col">
+        <div class="card">
+            <div class="card-header bg-warning">
+                <h5 class="mb-0">Массовые операции</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="d-grid">
+                            <a href="{% url 'admin:hours_distribution_nextyearplan_changelist' %}" 
+                               class="btn btn-outline-primary">
+                                <i class="fas fa-cogs"></i> Управление планами
+                            </a>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="d-grid">
+                            <a href="{% url 'admin:hours_distribution_academicyear_changelist' %}" 
+                               class="btn btn-outline-secondary">
+                                <i class="fas fa-calendar-alt"></i> Учебные годы
+                            </a>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="d-grid">
+                            <a href="{% url 'admin:hours_distribution_curriculum_changelist' %}" 
+                               class="btn btn-outline-info">
+                                <i class="fas fa-book"></i> Учебные планы
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

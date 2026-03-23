@@ -1,0 +1,92 @@
+{% extends base_template %}
+
+{% block title %}Отчеты по преподавателям{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h2>Отчеты по преподавателям</h2>
+        <p class="lead">Выберите преподавателя для просмотра отчета</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col">
+        <div class="card">
+            <div class="card-header bg-primary">
+                <h5 class="mb-0 text-white">Все преподаватели</h5>
+            </div>
+            <div class="card-body">
+                {% if teachers %}
+                <div class="row">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>№</th>
+                                <th>ФИО</th>
+                                <th>Сокращённое название</th>
+                                <th>Количество преподавателей</th>                            
+                                <th>Действия</th>
+                            </tr>
+                        </thead>
+                    {% for teacher in teachers %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td>{{ teacher.last_name }} {{ teacher.first_name }}</td>
+                        <td class="text-center">{{ teacher.department.name }} ({{ teacher.department.faculty.short_name }})</td>
+                        <td class="text-center"> {{ teacher.position }}</td>
+
+                        <td class="">
+                            <a href="{% url 'hours_distribution:teacher_report_detail' teacher.id %}" class="btn btn-primary btn-sm">
+                                        <i class="fas fa-chart-bar"></i>
+                                    </a>
+                                    <a href="{% url 'hours_distribution:export_report' 'teacher' %}?format=excel&teacher={{ teacher.id }}" class="btn btn-success btn-sm">
+                                        <i class="fas fa-file-excel"></i> 
+                                    </a>
+                                    <a href="{% url 'hours_distribution:export_report' 'teacher' %}?format=pdf&teacher={{ teacher.id }}" class="btn btn-danger btn-sm">
+                                        <i class="fas fa-file-pdf"></i>
+                                    </a>
+                        </td>
+                    </tr>
+                    {% comment %}                    
+                    <div class="col-md-4 mb-3">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ teacher.last_name }} {{ teacher.first_name }}</h5>
+                                <h6 class="card-subtitle mb-2 text-muted">
+                                    {{ teacher.department.name }} ({{ teacher.department.faculty.short_name }})
+                                </h6>
+                                <p class="card-text">
+                                    <small>
+                                        {{ teacher.position }}
+                                    </small>
+                                </p>
+                                <div class="d-grid gap-2">
+                                    <a href="{% url 'hours_distribution:teacher_report_detail' teacher.id %}" 
+                                       class="btn btn-primary btn-sm">
+                                        <i class="fas fa-chart-bar"></i> Просмотр отчета
+                                    </a>
+                                    <a href="{% url 'hours_distribution:export_report' 'teacher' %}?format=excel&teacher={{ teacher.id }}" 
+                                       class="btn btn-success btn-sm">
+                                        <i class="fas fa-file-excel"></i> Excel
+                                    </a>
+                                    <a href="{% url 'hours_distribution:export_report' 'teacher' %}?format=pdf&teacher={{ teacher.id }}" 
+                                       class="btn btn-danger btn-sm">
+                                        <i class="fas fa-file-pdf"></i> PDF
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endcomment %}
+                    {% endfor %}
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted">Преподаватели не найдены</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

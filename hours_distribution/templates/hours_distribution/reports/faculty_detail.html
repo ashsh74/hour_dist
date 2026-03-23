@@ -1,0 +1,361 @@
+{% extends base_template %}
+{% load custom_filters %}
+
+{% block title %}Отчет по факультету {{ faculty.name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .chart-container {
+        height: 300px;
+        width: 100%;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h2>Отчет по факультету: {{ faculty.name }}</h2>
+        <p class="lead">{{ current_year.name }}</p>
+    </div>
+    <div class="col-md-4 text-end">
+        <a href="{% url 'hours_distribution:faculty_report' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Назад к списку
+        </a>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-primary">
+            <div class="card-body text-center">
+                <h5 class="card-title">Кафедр</h5>
+                <p class="card-text display-6">{{ departments_count }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-success">
+            <div class="card-body text-center">
+                <h5 class="card-title">Преподавателей</h5>
+                <p class="card-text display-6">{{ total_faculty_teachers }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-info">
+            <div class="card-body text-center">
+                <h5 class="card-title">Всего часов</h5>
+                <p class="card-text display-6">{{ total_faculty_hours }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-warning">
+            <div class="card-body text-center">
+                <h5 class="card-title">Направлений</h5>
+                <p class="card-text display-6">{{ programs.count }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if chart_data %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-success">
+                <h5 class="mb-0 text-white">Нагрузка по кафедрам</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="departmentChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header bg-info">
+                <h5 class="mb-0 text-white">Преподаватели по кафедрам</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="teachersChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-secondary">
+                <h5 class="mb-0 text-white">Группы студентов (факультет)</h5>
+            </div>
+            <div class="card-body">
+                {% if student_groups %}
+                <div class="list-group">
+                    {% for group in student_groups %}
+                    <a href="{% url 'hours_distribution:student_group_detail' group.id %}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>{{ group.get_full_name }}</strong>
+                            <div class="text-muted small">{{ group.bachelor_program.code }} | {{ group.course.number }} курс</div>
+                        </div>
+                        <span class="badge bg-info">{{ group.students_count }}</span>
+                    </a>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-muted">Группы не найдены</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-secondary">
+                <h5 class="mb-0 text-white">Поточные группы (факультет)</h5>
+            </div>
+            <div class="card-body">
+                {% if stream_groups %}
+                <div class="list-group">
+                    {% for stream in stream_groups %}
+                    <a href="{% url 'hours_distribution:stream_group_detail' stream.id %}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>{{ stream.name }}</strong>
+                            <div class="text-muted small">{{ stream.bachelor_program.code }} | {{ stream.course.number }} курс</div>
+                        </div>
+                        <span class="badge bg-info">{{ stream.total_students }} / {{ stream.student_groups.count }}</span>
+                    </a>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-muted">Поточные группы не найдены</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="row mb-4">
+    <div class="col">
+        <div class="card">
+            <div class="card-header bg-primary">
+                <h5 class="mb-0 text-white">Кафедры факультета</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Кафедра</th>
+                                <th>Преподавателей</th>
+                                <th>Часов нагрузки</th>
+                                <th>Лекции</th>
+                                <th>Практики</th>
+                                <th>Лаб.</th>
+                                <th>Ср. нагрузка</th>
+                                <th>Действия</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for stat in department_stats %}
+                            <tr>
+                                <td>
+                                    <strong>{{ stat.department.name }}</strong><br>
+                                    <small class="text-muted">{{ stat.department.short_name }}</small>
+                                </td>
+                                <td>{{ stat.teachers_count }}</td>
+                                <td><span class="badge bg-primary">{{ stat.total_hours }}</span></td>
+                                <td>{{ stat.lecture_hours }}</td>
+                                <td>{{ stat.practice_hours }}</td>
+                                <td>{{ stat.lab_hours }}</td>
+                                <td>
+                                    {% if stat.teachers_count > 0 %}
+                                        {{ stat.total_hours|divide:stat.teachers_count|floatformat:1 }} ч
+                                    {% else %}
+                                        0 ч
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{% url 'hours_distribution:department_report_detail' stat.department.id %}" 
+                                       class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{% url 'hours_distribution:export_report' 'department' %}?format=excel&department={{ stat.department.id }}" 
+                                       class="btn btn-sm btn-outline-success">
+                                        <i class="fas fa-file-excel"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-warning">
+                <h5 class="mb-0 text-white">Направления бакалавриата</h5>
+            </div>
+            <div class="card-body">
+                <div class="list-group">
+                    {% for program in programs %}
+                    <div class="list-group-item">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">{{ program.code }} - {{ program.name }}</h6>
+                            <small class="text-muted">{{ program.curriculum_set.count }} планов</small>
+                        </div>
+                        <p class="mb-1 text-muted">
+                            Годы наборов: 
+                            {% for curriculum in program.curriculum_set.all|slice:":3" %}
+                                {{ curriculum.year_of_admission }}{% if not forloop.last %}, {% endif %}
+                            {% endfor %}
+                            {% if program.curriculum_set.count > 3 %}...{% endif %}
+                        </p>
+                    </div>
+                    {% empty %}
+                    <p class="text-muted">Направления не найдены</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-info">
+                <h5 class="mb-0 text-white">Общая статистика</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span>Всего кафедр:</span>
+                        <strong>{{ departments_count }}</strong>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span>Всего преподавателей:</span>
+                        <strong>{{ total_faculty_teachers }}</strong>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span>Общая нагрузка:</span>
+                        <strong>{{ total_faculty_hours }} ч</strong>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span>Средняя нагрузка на преподавателя:</span>
+                        <strong>
+                            {% if total_faculty_teachers > 0 %}
+                                {{ total_faculty_hours|divide:total_faculty_teachers|floatformat:1 }} ч
+                            {% else %}
+                                0 ч
+                            {% endif %}
+                        </strong>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span>Кафедр с высокой нагрузкой (>20k ч):</span>
+                        <strong>
+                            {% with high_load=0 %}
+                                {% for stat in department_stats %}
+                                    {% if stat.total_hours > 20000 %}
+                                        {% with high_load=high_load|add:1 %}
+                                        {% endwith %}
+                                    {% endif %}
+                                {% endfor %}
+                                {{ high_load }}
+                            {% endwith %}
+                        </strong>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+{% if chart_data %}
+document.addEventListener('DOMContentLoaded', function() {
+    // График нагрузки по кафедрам
+    const deptCtx = document.getElementById('departmentChart').getContext('2d');
+    const deptNames = {{ chart_data.dept_names|safe }};
+    const deptHours = {{ chart_data.dept_hours|safe }};
+    
+    new Chart(deptCtx, {
+        type: 'bar',
+        data: {
+            labels: deptNames,
+            datasets: [{
+                label: 'Часы нагрузки',
+                data: deptHours,
+                backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Часы'
+                    }
+                }
+            }
+        }
+    });
+    
+    // График преподавателей по кафедрам
+    const teachersCtx = document.getElementById('teachersChart').getContext('2d');
+    const teachersData = {{ chart_data.dept_teachers|safe }};
+    
+    new Chart(teachersCtx, {
+        type: 'pie',
+        data: {
+            labels: deptNames,
+            datasets: [{
+                data: teachersData,
+                backgroundColor: [
+                    'rgba(255, 99, 132, 0.5)',
+                    'rgba(54, 162, 235, 0.5)',
+                    'rgba(255, 206, 86, 0.5)',
+                    'rgba(75, 192, 192, 0.5)',
+                    'rgba(153, 102, 255, 0.5)',
+                    'rgba(255, 159, 64, 0.5)'
+                ],
+                borderColor: [
+                    'rgba(255, 99, 132, 1)',
+                    'rgba(54, 162, 235, 1)',
+                    'rgba(255, 206, 86, 1)',
+                    'rgba(75, 192, 192, 1)',
+                    'rgba(153, 102, 255, 1)',
+                    'rgba(255, 159, 64, 1)'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'right'
+                }
+            }
+        }
+    });
+});
+{% endif %}
+</script>
+{% endblock %}

@@ -1,0 +1,57 @@
+{% extends base_template %}
+
+{% block title %}Отчеты по факультетам{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h2>Отчеты по факультетам</h2>
+        <p class="lead">Выберите факультет для просмотра отчета</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col">
+        <div class="card">
+            <div class="card-header bg-primary">
+                <h5 class="mb-0 text-white">Все факультеты</h5>
+            </div>
+            <div class="card-body">
+                {% if faculties %}
+                <div class="row">
+                    {% for faculty in faculties %}
+                    <div class="col-md-6 mb-3">
+                        <div class="card h-100">
+                            <div class="card-header bg-secondary">
+                                <h5 class="mb-0 text-white">{{ faculty.name }}</h5>
+                            </div>
+                            <div class="card-body">
+                                <h5 class="card-title">{{ faculty.name }}</h5>
+                                <h6 class="card-subtitle mb-2 text-muted">
+                                    {{ faculty.short_name }}
+                                </h6>
+                                <p class="card-text">
+                                    <small>
+                                        Кафедр: {{ faculty.department_set.count }}<br>
+                                        Направлений: {{ faculty.bachelorprogram_set.count }}
+                                    </small>
+                                </p>
+                                <div class="d-grid gap-2">
+                                    <a href="{% url 'hours_distribution:faculty_report_detail' faculty.id %}" 
+                                       class="btn btn-primary">
+                                        <i class="fas fa-chart-bar"></i> Просмотр отчета
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-muted">Факультеты не найдены</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

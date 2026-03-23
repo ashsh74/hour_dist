@@ -1,0 +1,257 @@
+{% extends base_template %}
+
+{% block title %}Группа {{ group.code }}{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h2>Группа: {{ group.get_full_name }}</h2>
+        <p class="lead">
+            {{ group.bachelor_program.faculty.name }} | 
+            Тип: {{ group.get_group_type_display }}
+        </p>
+    </div>
+    <div class="col-md-4 text-end">
+        <a href="{% url 'hours_distribution:student_groups_list' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Назад к списку
+        </a>
+        <a href="{% url 'admin:hours_distribution_studentgroup_change' group.id %}" class="btn btn-primary">
+            <i class="fas fa-edit"></i> Редактировать
+        </a>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-primary">
+                <h5 class="mb-0 text-white">Основная информация</h5>
+            </div>
+            <div class="card-body">
+                <dl class="row">
+                    <dt class="col-sm-4">Код группы:</dt>
+                    <dd class="col-sm-8"><strong>{{ group.code }}</strong></dd>
+                    
+                    <dt class="col-sm-4">Название:</dt>
+                    <dd class="col-sm-8">{{ group.name }}</dd>
+                    
+                    <dt class="col-sm-4">Тип группы:</dt>
+                    <dd class="col-sm-8">
+                        <span class="badge bg-{% if group.group_type == 'stream' %}info{% elif group.group_type == 'subgroup' %}warning{% else %}secondary{% endif %}">
+                            {{ group.get_group_type_display }}
+                        </span>
+                    </dd>
+                    
+                    <dt class="col-sm-4">Курс:</dt>
+                    <dd class="col-sm-8">{{ group.course.number }} курс</dd>
+                    
+                    <dt class="col-sm-4">Направление:</dt>
+                    <dd class="col-sm-8">
+                        {{ group.bachelor_program.code }} - {{ group.bachelor_program.name }}
+                    </dd>
+                    
+                    <dt class="col-sm-4">Факультет:</dt>
+                    <dd class="col-sm-8">{{ group.bachelor_program.faculty.name }}</dd>
+                    
+                    <dt class="col-sm-4">Год набора:</dt>
+                    <dd class="col-sm-8">{{ group.year_of_admission }}</dd>
+                    
+                    <dt class="col-sm-4">Количество студентов:</dt>
+                    <dd class="col-sm-8">
+                        <span class="badge {% if group.students_count > group.max_students %}bg-danger{% else %}bg-success{% endif %}">
+                            {{ group.students_count }} из {{ group.max_students }} (макс.)
+                        </span>
+                    </dd>
+                    
+                    <dt class="col-sm-4">Статус:</dt>
+                    <dd class="col-sm-8">
+                        {% if group.is_active %}
+                        <span class="badge bg-success">Активна</span>
+                        {% else %}
+                        <span class="badge bg-secondary">Неактивна</span>
+                        {% endif %}
+                    </dd>
+                    
+                    <dt class="col-sm-4">Дата создания:</dt>
+                    <dd class="col-sm-8">{{ group.created_at|date:"d.m.Y H:i" }}</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-success">
+                <h5 class="mb-0 text-white">Статистика нагрузки</h5>
+            </div>
+            <div class="card-body">
+                <div class="text-center mb-4">
+                    <div class="display-4 text-primary">{{ total_hours }}</div>
+                    <p class="text-muted">Всего часов нагрузки</p>
+                </div>
+                
+                <div class="row text-center">
+                    <div class="col-md-4">
+                        <div class="text-info">
+                            <h4>{{ subject_stats|length }}</h4>
+                            <small>Дисциплин</small>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-success">
+                            <h4>{{ workloads|length }}</h4>
+                            <small>Нагрузок</small>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-warning">
+                            <h4>
+                                {% if group.students_count > 0 %}
+                                    {{ total_hours|divisibleby:group.students_count|floatformat:1 }}
+                                {% else %}
+                                    0
+                                {% endif %}
+                            </h4>
+                            <small>Часов на студента</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        {% if stream_groups %}
+        <div class="card mt-3">
+            <div class="card-header bg-info">
+                <h5 class="mb-0 text-white">Поточные группы</h5>
+            </div>
+            <div class="card-body">
+                <p class="card-text">Эта группа входит в следующие потоковые группы:</p>
+                <ul class="list-group list-group-flush">
+                    {% for stream in stream_groups %}
+                    <li class="list-group-item">
+                        <a href="{% url 'hours_distribution:stream_group_detail' stream.id %}">
+                            {{ stream.name }} ({{ stream.subject.code }})
+                        </a>
+                        <small class="text-muted d-block">
+                            {{ stream.total_students }} студентов, 
+                            {{ stream.student_groups.count }} групп
+                        </small>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col">
+        <div class="card">
+            <div class="card-header bg-warning">
+                <h5 class="mb-0 text-white">Нагрузка по дисциплинам</h5>
+            </div>
+            <div class="card-body">
+                {% if subject_stats %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Дисциплина</th>
+                                <th>Лекции</th>
+                                <th>Практики</th>
+                                <th>Лаб.</th>
+                                <th>Всего часов</th>
+                                <th>Преподаватели</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for subject_name, stats in subject_stats.items %}
+                            <tr>
+                                <td>{{ subject_name }}</td>
+                                <td>{{ stats.lecture }}</td>
+                                <td>{{ stats.practice }}</td>
+                                <td>{{ stats.lab }}</td>
+                                <td>
+                                    <span class="badge bg-primary">{{ stats.total_hours }}</span>
+                                </td>
+                                <td>
+                                    {% for teacher in stats.teachers|slice:":3" %}
+                                    <span class="badge bg-secondary mb-1">{{ teacher }}</span><br>
+                                    {% endfor %}
+                                    {% if stats.teachers|length > 3 %}
+                                    <span class="badge bg-info">+{{ stats.teachers|length|add:"-3" }}</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted">Нет данных о нагрузке для этой группы</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col">
+        <div class="card">
+            <div class="card-header bg-primary">
+                <h5 class="mb-0 text-white">Детали нагрузки</h5>
+            </div>
+            <div class="card-body">
+                {% if workloads %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Дисциплина</th>
+                                <th>Преподаватель</th>
+                                <th>Должность</th>
+                                <th>Лекции</th>
+                                <th>Практики</th>
+                                <th>Лаб.</th>
+                                <th>Всего</th>
+                                <th>Статус</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for wl in workloads %}
+                            <tr>
+                                <td>{{ wl.curriculum_subject_group.curriculum_subject.subject.name }}</td>
+                                <td>{{ wl.teacher }}</td>
+                                <td>{{ wl.teacher.position }}</td>
+                                <td>{{ wl.hours_lecture }}</td>
+                                <td>{{ wl.hours_practice }}</td>
+                                <td>{{ wl.hours_lab }}</td>
+                                <td>
+                                    <span class="badge bg-primary">{{ wl.total_hours }}</span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-{% if wl.status == 'approved' %}success{% elif wl.status == 'completed' %}info{% else %}warning{% endif %}">
+                                        {{ wl.get_status_display }}
+                                    </span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot>
+                            <tr class="table-active">
+                                <td colspan="6"><strong>Итого:</strong></td>
+                                <td><span class="badge bg-success">{{ total_hours }}</span></td>
+                                <td></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted">Нагрузка для этой группы не распределена</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
